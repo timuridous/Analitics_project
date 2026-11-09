@@ -4,12 +4,12 @@ import numpy as np
 
 ASSETS = {
     "GC=F" : {"name": "Gold", "code": "GOLD", "group": "Precious Metals"},
-    "SI=F" : {"name": "Silver", "code": "Silver", "group": "Precious Metals"},
-    "^GSPC" : {"name": "S&P500", "code": "SP500", "group": "Equities (S&P 500)"},
+    "SI=F" : {"name": "Silver", "code": "SILVER", "group": "Precious Metals"},
+    "^GSPC" : {"name": "S&P 500", "code": "SP500", "group": "Equities (S&P 500)"},
     "BTC-USD" : {"name": "Bitcoin", "code": "BTC", "group": "Crypto"},
     "ETH-USD" : {"name": "Ethereum", "code": "ETH", "group": "Crypto"}
 }
-START_DATE="2018-01-01";
+START_DATE="2018-01-01"
 
 print("Loading data...")
 
@@ -17,11 +17,12 @@ raw_frames=[]
 
 for ticker, meta in ASSETS.items():
     df=yf.download(ticker, start=START_DATE, interval="1d", progress=False)
-    df = df.reset_index()
-    df=df.reset_index()
 
     if isinstance(df.columns, pd.MultiIndex):
-         df.columns = [col[0] for col in df.columns]
+        df.columns = [col[0] for col in df.columns]
+
+    df = df.reset_index()
+
 
     df["Ticker"] = ticker
     df["Asset_Code"] = meta["code"]
@@ -36,6 +37,11 @@ fact_prices["Date"] = pd.to_datetime(fact_prices["Date"]).dt.tz_localize(None)
 
 
 pivot_close = fact_prices.pivot(index="Date", columns="Asset_Code", values="Close").sort_index()
+
+expected_codes = ["GOLD", "SILVER", "SP500", "BTC", "ETH"]
+missing_cols = [c for c in expected_codes if c not in pivot_close.columns]
+if missing_cols:
+    raise ValueError(f"Missing columns: {missing_cols}")
 
 is_trading_day = pivot_close["SP500"].notna().astype(int)
 
